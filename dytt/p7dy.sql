@@ -1,20 +1,22 @@
 -- phpMyAdmin SQL Dump
--- version 4.1.6
--- http://www.phpmyadmin.net
+-- version 4.7.6
+-- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: 2018-12-04 07:09:08
--- 服务器版本： 5.6.16
--- PHP Version: 5.5.9
+-- Generation Time: 2018-12-11 14:43:24
+-- 服务器版本： 10.1.29-MariaDB
+-- PHP Version: 7.1.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Database: `p7dy`
@@ -26,11 +28,19 @@ SET time_zone = "+00:00";
 -- 表的结构 `category`
 --
 
-CREATE TABLE IF NOT EXISTS `category` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `category_name` varchar(255) NOT NULL COMMENT '分类名称',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影分类表' AUTO_INCREMENT=1 ;
+CREATE TABLE `category` (
+  `id` int(11) NOT NULL,
+  `category_name` varchar(255) NOT NULL COMMENT '分类名称'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影分类表';
+
+--
+-- 转存表中的数据 `category`
+--
+
+INSERT INTO `category` (`id`, `category_name`) VALUES
+(1, '科幻'),
+(2, '悬疑'),
+(3, '惊悚');
 
 -- --------------------------------------------------------
 
@@ -38,11 +48,30 @@ CREATE TABLE IF NOT EXISTS `category` (
 -- 表的结构 `country`
 --
 
-CREATE TABLE IF NOT EXISTS `country` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `country_name` varchar(255) NOT NULL COMMENT '国家名字',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='国家表' AUTO_INCREMENT=1 ;
+CREATE TABLE `country` (
+  `id` int(11) NOT NULL,
+  `country_name` varchar(255) NOT NULL COMMENT '国家名字'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='国家表';
+
+--
+-- 转存表中的数据 `country`
+--
+
+INSERT INTO `country` (`id`, `country_name`) VALUES
+(1, '美国'),
+(2, '英国'),
+(3, '\'countryName\''),
+(4, '\'countryName\''),
+(5, '\'countryName\''),
+(6, '\'countryName\''),
+(7, '\'countryName\''),
+(8, '\'countryName\''),
+(9, '\'countryName\''),
+(10, '\'countryName\''),
+(11, '\'countryName\''),
+(12, '\'countryName\''),
+(13, '加拿大'),
+(14, '');
 
 -- --------------------------------------------------------
 
@@ -50,13 +79,19 @@ CREATE TABLE IF NOT EXISTS `country` (
 -- 表的结构 `download`
 --
 
-CREATE TABLE IF NOT EXISTS `download` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `download` (
+  `id` int(11) NOT NULL,
   `movie_id` int(11) NOT NULL,
   `download_type` tinyint(4) NOT NULL COMMENT '下载类型，1 迅雷 2 电驴 3 百度网盘 4 ftp',
-  `download_url` varchar(255) NOT NULL COMMENT '下载地址',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影下载地址' AUTO_INCREMENT=1 ;
+  `download_url` varchar(255) NOT NULL COMMENT '下载地址'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影下载地址';
+
+--
+-- 转存表中的数据 `download`
+--
+
+INSERT INTO `download` (`id`, `movie_id`, `download_type`, `download_url`) VALUES
+(1, 1, 1, 'ftp://ygdy8:ygdy8@yg45.dydytt.net:3155/阳光电影www.ygdy8.com.网络谜踪.BD.720p.中英双字幕.mkv');
 
 -- --------------------------------------------------------
 
@@ -64,11 +99,18 @@ CREATE TABLE IF NOT EXISTS `download` (
 -- 表的结构 `language`
 --
 
-CREATE TABLE IF NOT EXISTS `language` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `language_name` varchar(255) NOT NULL COMMENT '语言名称',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+CREATE TABLE `language` (
+  `id` int(11) NOT NULL,
+  `language_name` varchar(255) NOT NULL COMMENT '语言名称'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- 转存表中的数据 `language`
+--
+
+INSERT INTO `language` (`id`, `language_name`) VALUES
+(1, '英语'),
+(2, '西班牙语');
 
 -- --------------------------------------------------------
 
@@ -76,8 +118,8 @@ CREATE TABLE IF NOT EXISTS `language` (
 -- 表的结构 `movies`
 --
 
-CREATE TABLE IF NOT EXISTS `movies` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `movies` (
+  `id` int(11) NOT NULL,
   `title_cn` varchar(255) NOT NULL,
   `short_title` varchar(255) NOT NULL,
   `title` varchar(255) NOT NULL,
@@ -97,22 +139,28 @@ CREATE TABLE IF NOT EXISTS `movies` (
   `writers` varchar(255) NOT NULL,
   `actors` varchar(255) NOT NULL COMMENT '主演',
   `profiles` varchar(255) NOT NULL COMMENT '简介',
-  `create_time` varchar(255) NOT NULL COMMENT '演员id，多个用半角逗号分割',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影基础信息表' AUTO_INCREMENT=1 ;
+  `create_time` varchar(255) NOT NULL COMMENT '演员id，多个用半角逗号分割'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影基础信息表';
 
 -- --------------------------------------------------------
 
 --
--- 表的结构 `release`
+-- 表的结构 `released`
 --
 
-CREATE TABLE IF NOT EXISTS `release` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `released` (
+  `id` int(11) NOT NULL,
   `release_time` varchar(255) NOT NULL COMMENT '上映时间',
-  `release_country` varchar(255) NOT NULL COMMENT '上映地区',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='上映时间表' AUTO_INCREMENT=1 ;
+  `release_area` varchar(255) NOT NULL COMMENT '上映地区'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='上映时间表';
+
+--
+-- 转存表中的数据 `released`
+--
+
+INSERT INTO `released` (`id`, `release_time`, `release_area`) VALUES
+(1, '2018-08-31', '威尼斯电影节'),
+(2, '2018-10-05', '美国');
 
 -- --------------------------------------------------------
 
@@ -120,14 +168,20 @@ CREATE TABLE IF NOT EXISTS `release` (
 -- 表的结构 `score`
 --
 
-CREATE TABLE IF NOT EXISTS `score` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `score` (
+  `id` int(11) NOT NULL,
   `movie_id` int(11) NOT NULL COMMENT '电影id',
   `score_type` tinyint(4) NOT NULL COMMENT '1 豆瓣评分 2 IMDb 评分',
   `score` varchar(255) NOT NULL COMMENT '评分',
-  `from_user` int(11) NOT NULL COMMENT '评分用户数',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影评分表' AUTO_INCREMENT=1 ;
+  `from_user` int(11) NOT NULL COMMENT '评分用户数'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影评分表';
+
+--
+-- 转存表中的数据 `score`
+--
+
+INSERT INTO `score` (`id`, `movie_id`, `score_type`, `score`, `from_user`) VALUES
+(1, 1, 1, '5.3', 19921);
 
 -- --------------------------------------------------------
 
@@ -135,11 +189,18 @@ CREATE TABLE IF NOT EXISTS `score` (
 -- 表的结构 `subtitle`
 --
 
-CREATE TABLE IF NOT EXISTS `subtitle` (
-  `1` int(11) NOT NULL AUTO_INCREMENT,
-  `subtitle_name` int(11) NOT NULL COMMENT '字幕名称',
-  PRIMARY KEY (`1`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='字幕' AUTO_INCREMENT=1 ;
+CREATE TABLE `subtitle` (
+  `id` int(11) NOT NULL,
+  `subtitle_name` varchar(255) NOT NULL COMMENT '字幕名称'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='字幕';
+
+--
+-- 转存表中的数据 `subtitle`
+--
+
+INSERT INTO `subtitle` (`id`, `subtitle_name`) VALUES
+(1, '0'),
+(2, '中英双字幕');
 
 -- --------------------------------------------------------
 
@@ -147,13 +208,145 @@ CREATE TABLE IF NOT EXISTS `subtitle` (
 -- 表的结构 `worker`
 --
 
-CREATE TABLE IF NOT EXISTS `worker` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `worker` (
+  `id` int(11) NOT NULL,
   `worker_type` tinyint(4) NOT NULL COMMENT '工作人员类型，1 导演 2 演员 3 编剧',
-  `worker_name` varchar(255) NOT NULL COMMENT '名字（前半部分）',
-  `worker_name_sec` varchar(255) NOT NULL COMMENT '名字（英文名字等）',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='导演演员表' AUTO_INCREMENT=1 ;
+  `worker_name_cn` varchar(255) NOT NULL COMMENT '名字（中文音译）',
+  `worker_name_en` varchar(255) NOT NULL COMMENT '名字（英文）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='导演演员表';
+
+--
+-- 转存表中的数据 `worker`
+--
+
+INSERT INTO `worker` (`id`, `worker_type`, `worker_name_cn`, `worker_name_en`) VALUES
+(1, 2, '查宁·塔图姆', 'Channing Tatum'),
+(2, 2, '詹姆斯·柯登', 'James Corden'),
+(3, 2, '赞达亚', 'Zendaya'),
+(4, 2, '勒布朗·詹姆斯', 'LeBron James'),
+(5, 2, '科曼', 'Common'),
+(6, 2, '吉娜·罗德里格兹', 'Gina Rodriguez'),
+(7, 2, '丹尼·德维托', 'Danny DeVito'),
+(8, 2, '吉米·塔特罗', 'Jimmy Tatro'),
+(9, 2, '雅拉·沙希迪', 'Yara Shahidi'),
+(10, 2, '伊利·亨利', 'Ely Henry');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `category`
+--
+ALTER TABLE `category`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `country`
+--
+ALTER TABLE `country`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `download`
+--
+ALTER TABLE `download`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `language`
+--
+ALTER TABLE `language`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `movies`
+--
+ALTER TABLE `movies`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `released`
+--
+ALTER TABLE `released`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `score`
+--
+ALTER TABLE `score`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `subtitle`
+--
+ALTER TABLE `subtitle`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `worker`
+--
+ALTER TABLE `worker`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `category`
+--
+ALTER TABLE `category`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- 使用表AUTO_INCREMENT `country`
+--
+ALTER TABLE `country`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- 使用表AUTO_INCREMENT `download`
+--
+ALTER TABLE `download`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- 使用表AUTO_INCREMENT `language`
+--
+ALTER TABLE `language`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- 使用表AUTO_INCREMENT `movies`
+--
+ALTER TABLE `movies`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 使用表AUTO_INCREMENT `released`
+--
+ALTER TABLE `released`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- 使用表AUTO_INCREMENT `score`
+--
+ALTER TABLE `score`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- 使用表AUTO_INCREMENT `subtitle`
+--
+ALTER TABLE `subtitle`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- 使用表AUTO_INCREMENT `worker`
+--
+ALTER TABLE `worker`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
