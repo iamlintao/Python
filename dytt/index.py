@@ -23,7 +23,7 @@ BASE_DOMAIN="http://www.dytt8.net"
 def get_detail_url(url):
     response = requests.get(url, headers=HEADERS) #print(response.content.decode('gbk'))
     text = response.text.encode("utf-8")  #拿到数据，，再解码
-    text = response.content.decode('gbk')
+    # text = response.content.decode('gbk')
     html = etree.HTML(text)
     detail_urls = html.xpath("//table[@class='tbspan']//a/@href")
     detail_urls=map(lambda url:BASE_DOMAIN+url,detail_urls)
@@ -124,7 +124,7 @@ movies=[]
 
 def spider():
     base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
-    for x in range(1,2):  #how much page depend on you
+    for x in range(1,100):  #how much page depend on you
         # print("==="*30)
         # print(x)
         url=base_url.format(x)
@@ -317,7 +317,11 @@ def add_worker(type,content):
             db.commit()
             ids.append(lastID)
 
-    return ids
+
+    _ids = [str(j) for j in ids]
+    _ids = ','.join(_ids)
+
+    return _ids
 
 ## 下载地址处理
 ## 1 迅雷 2 电驴 3 百度网盘 4 ftp 5 magnet( 磁力链)
@@ -408,7 +412,7 @@ if __name__ == '__main__':
                 info['_name_en'] = value
 
             ##   'year': '2018',
-            if key == '_year':
+            if key == 'year':
                 info['_year'] = value
 
             ##   'country': '美国/加拿大',
@@ -460,9 +464,12 @@ if __name__ == '__main__':
             if key == 'actors':
                 info['_actors'] = add_worker(2,value)
 
+
             ##   'profiles': ['', '故事讲述一博主史蒂芬娜（', ''],
             if key == 'profiles':
-                info['_profiles'] = value
+                _value = [str(i) for i in value]
+                info['_profiles'] = '<p/>'.join(_value)
+
 
             ##   'download_url': 'ftp://ygdy8:ygdy8@yg45.dydytt.net:8369/阳光电影www.ygdy8.com.一个小忙.BD.720p.中英双字幕.mkv'
             if key == 'download_url':
@@ -477,11 +484,10 @@ if __name__ == '__main__':
             lastID = ck[0]['id']
         else:
             _thisTime = int(time.time())
-            in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (info['title'], info['short_title'], info['name_cn'], info['name_en'], info['cover'], info['year'],info['country'], info['category'], info['language'], info['sub_title'], info['release_time'],info['file_format'], info['ratio'], info['length'], info['director'], info['writers'], info['actors'],info['profiles'], _thisTime)
+            in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(info['_title'], info['_short_title'], info['_name_cn'], info['_name_en'], info['_cover'], info['_year'],info['_country'], info['_category'], info['_language'], info['_sub_title'], info['_release_time'],info['_file_format'], info['_ratio'], info['_length'], info['_director'], info['_writers'], info['_actors'], info['_profiles'], _thisTime)
             cursor.execute(in_sql)
             lastID = db.insert_id()
             db.commit()
-
 
         ## imdb评分
         if info['_imdb_score']:
