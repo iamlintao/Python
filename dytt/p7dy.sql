@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: 2018-12-11 14:43:24
+-- Generation Time: 2018-12-13 10:34:36
 -- 服务器版本： 10.1.29-MariaDB
 -- PHP Version: 7.1.12
 
@@ -82,8 +82,8 @@ INSERT INTO `country` (`id`, `country_name`) VALUES
 CREATE TABLE `download` (
   `id` int(11) NOT NULL,
   `movie_id` int(11) NOT NULL,
-  `download_type` tinyint(4) NOT NULL COMMENT '下载类型，1 迅雷 2 电驴 3 百度网盘 4 ftp',
-  `download_url` varchar(255) NOT NULL COMMENT '下载地址'
+  `download_type` tinyint(4) NOT NULL COMMENT '下载类型，1 迅雷 2 电驴 3 百度网盘 4 ftp 5 magnet( 磁力链)',
+  `download_url` varchar(2550) NOT NULL COMMENT '下载地址'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影下载地址';
 
 --
@@ -91,7 +91,10 @@ CREATE TABLE `download` (
 --
 
 INSERT INTO `download` (`id`, `movie_id`, `download_type`, `download_url`) VALUES
-(1, 1, 1, 'ftp://ygdy8:ygdy8@yg45.dydytt.net:3155/阳光电影www.ygdy8.com.网络谜踪.BD.720p.中英双字幕.mkv');
+(1, 1, 1, 'ftp://ygdy8:ygdy8@yg45.dydytt.net:3155/阳光电影www.ygdy8.com.网络谜踪.BD.720p.中英双字幕.mkv'),
+(2, 1, 5, 'magnet:?xt=urn:btih:3dcecfe415c6244a059ba4dfca0bdc5d3ef38759&amp;dn=%e9%98%b3%e5%85%89%e7%94%b5%e5%bd%b1www.ygdy8.com.%e5%bd%b1.HD.1080p.%e5%9b%bd%e8%af%ad%e4%b8%ad%e8%8b%b1%e5%8f%8c%e5%ad%97.mp4&amp;tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce'),
+(3, 1, 5, 'magnet:?xt=urn:btih:3dcecfe415c6244a059ba4dfca0bdc5d3ef38759&amp;dn=%e9%98%b3%e5%85%89%e7%94%b5%e5%bd%b1www.ygdy8.com.%e5%bd%b1.HD.1080p.%e5%9b%bd%e8%af%ad%e4%b8%ad%e8%8b%b1%e5%8f%8c%e5%ad%97.mp4&amp;tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce'),
+(4, 1, 5, 'magnet:?xt=urn:btih:3dcecfe415c6244a059ba4dfca0bdc5d3ef38759&amp;dn=%e9%98%b3%e5%85%89%e7%94%b5%e5%bd%b1www.ygdy8.com.%e5%bd%b1.HD.1080p.%e5%9b%bd%e8%af%ad%e4%b8%ad%e8%8b%b1%e5%8f%8c%e5%ad%97.mp4&amp;tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce&amp;tr=udp%3a%2f%2fthetracker.org%3a80%2fannounce&amp;tr=http%3a%2f%2fretracker.telecom.by%2fannounce');
 
 -- --------------------------------------------------------
 
@@ -120,26 +123,25 @@ INSERT INTO `language` (`id`, `language_name`) VALUES
 
 CREATE TABLE `movies` (
   `id` int(11) NOT NULL,
-  `title_cn` varchar(255) NOT NULL,
-  `short_title` varchar(255) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `cover` varchar(255) NOT NULL,
-  `year` int(11) NOT NULL,
-  `country` varchar(255) NOT NULL,
-  `category` varchar(255) NOT NULL,
-  `language` varchar(255) NOT NULL,
-  `sub_title` varchar(255) NOT NULL,
-  `release_time` varchar(255) NOT NULL,
-  `imdb_score` varchar(255) NOT NULL,
-  `douban_score` varchar(255) NOT NULL,
-  `file_format` varchar(255) NOT NULL,
-  `ratio` varchar(255) NOT NULL,
-  `length` varchar(255) NOT NULL,
-  `director` varchar(255) NOT NULL,
-  `writers` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL COMMENT '标题',
+  `short_title` varchar(255) NOT NULL COMMENT '短标题（名称）',
+  `name_cn` varchar(255) NOT NULL COMMENT '翻译名',
+  `name_en` varchar(255) NOT NULL COMMENT '英文名',
+  `cover` varchar(255) NOT NULL COMMENT '封面图',
+  `publish_year` int(11) NOT NULL COMMENT '上映年份',
+  `country` varchar(255) NOT NULL COMMENT '产地',
+  `category` varchar(255) NOT NULL COMMENT '分类，多个用半角逗号分隔',
+  `languages` varchar(255) NOT NULL COMMENT '语言',
+  `sub_title` varchar(255) NOT NULL COMMENT '字幕',
+  `release_time` varchar(255) NOT NULL COMMENT '上映时间',
+  `file_format` varchar(255) NOT NULL COMMENT '文件格式',
+  `ratio` varchar(255) NOT NULL COMMENT '分辨率',
+  `time_length` varchar(255) NOT NULL COMMENT '时长',
+  `director` varchar(255) NOT NULL COMMENT '导演',
+  `writers` varchar(255) NOT NULL COMMENT '编剧',
   `actors` varchar(255) NOT NULL COMMENT '主演',
   `profiles` varchar(255) NOT NULL COMMENT '简介',
-  `create_time` varchar(255) NOT NULL COMMENT '演员id，多个用半角逗号分割'
+  `create_time` int(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='电影基础信息表';
 
 -- --------------------------------------------------------
@@ -309,7 +311,7 @@ ALTER TABLE `country`
 -- 使用表AUTO_INCREMENT `download`
 --
 ALTER TABLE `download`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- 使用表AUTO_INCREMENT `language`

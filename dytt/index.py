@@ -5,7 +5,7 @@
 import requests
 import pymysql
 import re
-import json
+import time
 from lxml import etree
 
 ##  链接数据库配置
@@ -292,11 +292,16 @@ def add_score(movieID,typeID,scoreContent):
 def add_worker(type,content):
     ids = []
 
+    ## 导演的数据需要转换一下
+    if type == 1:
+        content = {content}
+
     for i in content:
 
         _name = i.split(' ',1)
-        _name_cn = _name[0]     ## 中文名
-        _name_en = _name[1]     ## 英文名
+
+        _name_cn = _name[0].replace("'","_")     ## 中文名
+        _name_en = _name[1].replace("'","_")     ## 英文名
 
         sql = " select id from worker where worker_type=%s and worker_name_cn='%s' and worker_name_en='%s' " %(type,_name_cn,_name_en)
         cursor.execute(sql)
@@ -314,9 +319,19 @@ def add_worker(type,content):
 
     return ids
 
-
-def add_download(movieID,type,downloadURL):
+## 下载地址处理
+## 1 迅雷 2 电驴 3 百度网盘 4 ftp 5 magnet( 磁力链)
+def add_download(movieID,downloadURL):
     id = ''
+
+    ## 判断类型
+    typeCode = downloadURL.split(":")[0]
+    type = ''
+    if typeCode == 'ftp':
+        type = 4
+    if typeCode == 'magnet':
+        type = 5
+
 
     sql = " select id from download where movie_id=%s and download_type =%s and download_url='%s' " % (movieID,type,downloadURL)
     cursor.execute(sql)
@@ -334,41 +349,155 @@ def add_download(movieID,type,downloadURL):
     return id
 
 
+#########
+
+
 if __name__ == '__main__':
 
-    ## 国家id
-    countryID = add_country('英国/')
-
-    ## 分类id
-    categoryID = add_category('科幻/悬疑/惊悚')
-
-    ## 语言id
-    languageID = add_language('英语/西班牙语')
-
-    ## 字幕
-    subtitleID = add_subtitle('中英双字幕')
-
-    ## 上映时间
-    release = add_release('2018-08-31(威尼斯电影节) / 2018-10-05(美国)')
-
-    ## 评分,需要电影表主键和平台id：1 豆瓣 2 imdb
-    score = add_score(1,1,'5.3/10 from 19921 users')
-
-    ## 导演和演员
-    act = add_worker(2,['查宁·塔图姆 Channing Tatum', '詹姆斯·柯登 James Corden', '赞达亚 Zendaya', '勒布朗·詹姆斯 LeBron James', '科曼 Common', '吉娜·罗德里格兹 Gina Rodriguez', '丹尼·德维托 Danny DeVito', '吉米·塔特罗 Jimmy Tatro', '雅拉·沙希迪 Yara Shahidi', '伊利·亨利 Ely Henry'])
-
-    ## 下载地址
-    down = add_download(1,1,'ftp://ygdy8:ygdy8@yg45.dydytt.net:3155/阳光电影www.ygdy8.com.网络谜踪.BD.720p.中英双字幕.mkv')
-    print(down)
-
-
-
-
-    # spider()
-    # for movie in movies:
-    #     for (key,value) in movie.items():
+    # ## 国家id
+    # countryID = add_country('英国/')
     #
-    #         print(key)
-    #         print(value)
+    # ## 分类id
+    # categoryID = add_category('科幻/悬疑/惊悚')
     #
-    #     exit()
+    # ## 语言id
+    # languageID = add_language('英语/西班牙语')
+    #
+    # ## 字幕
+    # subtitleID = add_subtitle('中英双字幕')
+    #
+    # ## 上映时间
+    # release = add_release('2018-08-31(威尼斯电影节) / 2018-10-05(美国)')
+    #
+    # ## 评分,需要电影表主键和平台id：1 豆瓣 2 imdb
+    # score = add_score(1,1,'5.3/10 from 19921 users')
+    #
+    # ## 导演和演员
+    # act = add_worker(2,['查宁·塔图姆 Channing Tatum', '詹姆斯·柯登 James Corden', '赞达亚 Zendaya', '勒布朗·詹姆斯 LeBron James', '科曼 Common', '吉娜·罗德里格兹 Gina Rodriguez', '丹尼·德维托 Danny DeVito', '吉米·塔特罗 Jimmy Tatro', '雅拉·沙希迪 Yara Shahidi', '伊利·亨利 Ely Henry'])
+    #
+    # ## 下载地址
+    # down = add_download(1,'magnet:?xt=urn:btih:3dcecfe415c6244a059ba4dfca0bdc5d3ef38759&amp;dn=%e9%98%b3%e5%85%89%e7%94%b5%e5%bd%b1www.ygdy8.com.%e5%bd%b1.HD.1080p.%e5%9b%bd%e8%af%ad%e4%b8%ad%e8%8b%b1%e5%8f%8c%e5%ad%97.mp4&amp;tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce&amp;tr=udp%3a%2f%2fthetracker.org%3a80%2fannounce&amp;tr=http%3a%2f%2fretracker.telecom.by%2fannounce')
+
+
+    spider()
+    for movie in movies:
+        info = {}   ## 定义字典
+        info['_writers'] = ''    ##  设置默认值
+        for (key,value) in movie.items():
+
+            ##   '_writers': '',
+            if key == 'writers':
+                info['_writers'] = add_worker(3,value)
+
+            ##   'title': '2018年悬疑《一个小忙/失踪网红》BD中英双字幕',
+            if key == 'title':
+                # info['_title'] = value
+                info['_title'] = value
+                info['_short_title'] = re.findall(r'[《](.*?)[》]', value)[0]
+
+            ##   'cover': 'https://extraimage.net/images/2018/12/12/78a6236c00693a056d28d726a12ae835.jpg',
+            if key == 'cover':
+                info['_cover'] = value
+
+            ##   'name_cn': '一个小忙/举手之劳/失踪网红(台)/小心帮忙(港)/简单帮个忙',
+            if key == 'name_cn':
+                info['_name_cn'] = value
+
+            ##   'name_en': 'A Simple Favor',
+            if key == 'name_en':
+                info['_name_en'] = value
+
+            ##   'year': '2018',
+            if key == '_year':
+                info['_year'] = value
+
+            ##   'country': '美国/加拿大',
+            if key == 'country':
+                info['_country'] = add_country(value)
+
+            ##   'category': '剧情/悬疑/犯罪',
+            if key == 'category':
+                info['_category'] = add_category(value)
+
+            ##   'language': '英语',
+            if key == 'language':
+                info['_language'] = add_language(value)
+
+            ##   'sub_title': '中英双字幕',
+            if key == 'sub_title':
+                info['_sub_title'] = add_subtitle(value)
+
+            ##   'release_time': '2018-09-14(美国)',
+            if key == 'release_time':
+                info['_release_time'] = add_release(value)
+
+            ## 'imdb_score': '7.1/10 from 28895 users',
+            if key == 'imdb_score':
+                info['_imdb_score'] = value
+
+            ## 'douban_score': '7.1/10 from 4109 users',
+            if key == 'douban_score':
+                info['_douban_score'] = value
+
+
+            ##   'file_format': 'x264 + aac',
+            if key == 'file_format':
+                info['_file_format'] = value
+
+            ##   'ratio': '1280 x 688',
+            if key == 'ratio':
+                info['_ratio'] = value
+
+            ##   'length': '117分钟',
+            if key == 'length':
+                info['_length'] = value
+
+            ##   'director': '保罗·费格 Paul Feig',
+            if key == 'director':
+                info['_director'] = add_worker(1,value)
+
+            ##   'actors': ['布蕾克·莱弗利 Blake Lively', ],
+            if key == 'actors':
+                info['_actors'] = add_worker(2,value)
+
+            ##   'profiles': ['', '故事讲述一博主史蒂芬娜（', ''],
+            if key == 'profiles':
+                info['_profiles'] = value
+
+            ##   'download_url': 'ftp://ygdy8:ygdy8@yg45.dydytt.net:8369/阳光电影www.ygdy8.com.一个小忙.BD.720p.中英双字幕.mkv'
+            if key == 'download_url':
+                info['_download_url'] = value
+
+        # ## 主表操作
+        ck_sql = " select id from movies where short_title='" + info['_short_title'] + "' "
+        cursor.execute(ck_sql)
+        ck = cursor.fetchone()
+
+        if ck:  ## not empty
+            lastID = ck[0]['id']
+        else:
+            _thisTime = int(time.time())
+            in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (info['title'], info['short_title'], info['name_cn'], info['name_en'], info['cover'], info['year'],info['country'], info['category'], info['language'], info['sub_title'], info['release_time'],info['file_format'], info['ratio'], info['length'], info['director'], info['writers'], info['actors'],info['profiles'], _thisTime)
+            cursor.execute(in_sql)
+            lastID = db.insert_id()
+            db.commit()
+
+
+        ## imdb评分
+        if info['_imdb_score']:
+            add_score(2, info['_douban_score'])
+
+        ## 豆瓣评分
+        if info['_douban_score']:
+            add_score(1,info['_douban_score'])
+
+
+        if info['_download_url']:
+           add_download(lastID,info['_download_url'])
+
+
+
+        print(info)
+
+
+        exit()
