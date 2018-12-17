@@ -22,8 +22,8 @@ BASE_DOMAIN="http://www.dytt8.net"
 
 def get_detail_url(url):
     response = requests.get(url, headers=HEADERS) #print(response.content.decode('gbk'))
-    text = response.text.encode("utf-8")  #拿到数据，，再解码
-    # text = response.content.decode('gbk')
+    # text = response.text.encode("utf-8")  #拿到数据，，再解码
+    text = response.content.decode('gbk',"ignore")      ##  ignore  解决编码问题
     html = etree.HTML(text)
     detail_urls = html.xpath("//table[@class='tbspan']//a/@href")
     detail_urls=map(lambda url:BASE_DOMAIN+url,detail_urls)
@@ -57,6 +57,11 @@ def parse_detail_page(url):
             if info.startswith("◎年　　代"):
                 info=parse_info(info,"◎年　　代")
                 movie['year']=info
+
+            if info.startswith("◎国　　家"):
+                info=parse_info(info,"◎国　　家")
+                movie['country']=info
+
             elif info.startswith("◎译　　名"):
                 info=parse_info(info,"◎译　　名")
                 movie['name_cn']=info
@@ -115,24 +120,23 @@ def parse_detail_page(url):
                     profiles.append(profile)
                     movie['profiles']=profiles
         download_url=html.xpath("//td[@bgcolor='#fdfddf']/a/@href")[0]
-        #print(download_url)
         movie['download_url']=download_url
         return movie
 
 ## 定义数组
-movies=[]
-
-def spider():
-    base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
-    for x in range(1,100):  #how much page depend on you
-        # print("==="*30)
-        # print(x)
-        url=base_url.format(x)
-        detail_urls=get_detail_url(url)
-        for detail_url in detail_urls:
-            # print(detail_url)
-            movie=parse_detail_page(detail_url)
-            movies.append(movie)
+# movies=[]
+#
+# def spider():
+#     base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
+#     for x in range(100,1,-1):  #how much page depend on you
+#         # print("==="*30)
+#         # print(x)
+#         url=base_url.format(x)
+#         detail_urls=get_detail_url(url)
+#         for detail_url in detail_urls:
+#             # print(detail_url)
+#             movie=parse_detail_page(detail_url)
+#             movies.append(movie)
 
 ## 国家字段处理，返回逗号分隔的id
 def add_country(countryName):
@@ -300,8 +304,12 @@ def add_worker(type,content):
 
         _name = i.split(' ',1)
 
-        _name_cn = _name[0].replace("'","_")     ## 中文名
-        _name_en = _name[1].replace("'","_")     ## 英文名
+        _name_cn = _name[0].replace("'", "_")  ## 中文名
+
+        if len(_name) > 1:
+            _name_en = _name[1].replace("'","_")     ## 英文名
+        else:
+            _name_en = ''
 
         sql = " select id from worker where worker_type=%s and worker_name_cn='%s' and worker_name_en='%s' " %(type,_name_cn,_name_en)
         cursor.execute(sql)
@@ -383,127 +391,148 @@ if __name__ == '__main__':
     # down = add_download(1,'magnet:?xt=urn:btih:3dcecfe415c6244a059ba4dfca0bdc5d3ef38759&amp;dn=%e9%98%b3%e5%85%89%e7%94%b5%e5%bd%b1www.ygdy8.com.%e5%bd%b1.HD.1080p.%e5%9b%bd%e8%af%ad%e4%b8%ad%e8%8b%b1%e5%8f%8c%e5%ad%97.mp4&amp;tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce&amp;tr=udp%3a%2f%2fthetracker.org%3a80%2fannounce&amp;tr=http%3a%2f%2fretracker.telecom.by%2fannounce')
 
 
-    spider()
-    for movie in movies:
-        info = {}   ## 定义字典
-        info['_writers'] = ''    ##  设置默认值
-        for (key,value) in movie.items():
+    # spider()
 
-            ##   '_writers': '',
-            if key == 'writers':
-                info['_writers'] = add_worker(3,value)
+    base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
+    for x in range(1, 100):  # how much page depend on you
+        # print("==="*30)
+        # print(x)
+        url = base_url.format(x)
+        detail_urls = get_detail_url(url)
+        for detail_url in detail_urls:
+            # print(detail_url)
+            movies=[]
 
-            ##   'title': '2018年悬疑《一个小忙/失踪网红》BD中英双字幕',
-            if key == 'title':
-                # info['_title'] = value
-                info['_title'] = value
-                info['_short_title'] = re.findall(r'[《](.*?)[》]', value)[0]
+            movie = parse_detail_page(detail_url)
+            movies.append(movie)
 
-            ##   'cover': 'https://extraimage.net/images/2018/12/12/78a6236c00693a056d28d726a12ae835.jpg',
-            if key == 'cover':
-                info['_cover'] = value
+            for movie in movies:
+                info = {}   ## 定义字典
 
-            ##   'name_cn': '一个小忙/举手之劳/失踪网红(台)/小心帮忙(港)/简单帮个忙',
-            if key == 'name_cn':
-                info['_name_cn'] = value
-
-            ##   'name_en': 'A Simple Favor',
-            if key == 'name_en':
-                info['_name_en'] = value
-
-            ##   'year': '2018',
-            if key == 'year':
-                info['_year'] = value
-
-            ##   'country': '美国/加拿大',
-            if key == 'country':
-                info['_country'] = add_country(value)
-
-            ##   'category': '剧情/悬疑/犯罪',
-            if key == 'category':
-                info['_category'] = add_category(value)
-
-            ##   'language': '英语',
-            if key == 'language':
-                info['_language'] = add_language(value)
-
-            ##   'sub_title': '中英双字幕',
-            if key == 'sub_title':
-                info['_sub_title'] = add_subtitle(value)
-
-            ##   'release_time': '2018-09-14(美国)',
-            if key == 'release_time':
-                info['_release_time'] = add_release(value)
-
-            ## 'imdb_score': '7.1/10 from 28895 users',
-            if key == 'imdb_score':
-                info['_imdb_score'] = value
-
-            ## 'douban_score': '7.1/10 from 4109 users',
-            if key == 'douban_score':
-                info['_douban_score'] = value
+                info['_writers'] = ''    ##  设置默认值
+                info['_release_time'] = ''
+                info['_imdb_score'] = ''
+                info['_douban_score'] = ''
+                info['_name_cn'] = ''
+                info['_name_en'] = ''
+                info['_country'] = ''
+                info['_director'] = ''
 
 
-            ##   'file_format': 'x264 + aac',
-            if key == 'file_format':
-                info['_file_format'] = value
+                for (key,value) in movie.items():
 
-            ##   'ratio': '1280 x 688',
-            if key == 'ratio':
-                info['_ratio'] = value
+                    ##   '_writers': '',
+                    if key == 'writers':
+                        info['_writers'] = add_worker(3,value)
 
-            ##   'length': '117分钟',
-            if key == 'length':
-                info['_length'] = value
+                    ##   'title': '2018年悬疑《一个小忙/失踪网红》BD中英双字幕',
+                    if key == 'title':
+                        # info['_title'] = value
+                        info['_title'] = value
+                        info['_short_title'] = re.findall(r'[《](.*?)[》]', value)[0]
 
-            ##   'director': '保罗·费格 Paul Feig',
-            if key == 'director':
-                info['_director'] = add_worker(1,value)
+                    ##   'cover': 'https://extraimage.net/images/2018/12/12/78a6236c00693a056d28d726a12ae835.jpg',
+                    if key == 'cover':
+                        info['_cover'] = value
 
-            ##   'actors': ['布蕾克·莱弗利 Blake Lively', ],
-            if key == 'actors':
-                info['_actors'] = add_worker(2,value)
+                    ##   'name_cn': '一个小忙/举手之劳/失踪网红(台)/小心帮忙(港)/简单帮个忙',
+                    if key == 'name_cn':
+                        info['_name_cn'] = value
 
+                    ##   'name_en': 'A Simple Favor',
+                    if key == 'name_en':
+                        info['_name_en'] = value
 
-            ##   'profiles': ['', '故事讲述一博主史蒂芬娜（', ''],
-            if key == 'profiles':
-                _value = [str(i) for i in value]
-                info['_profiles'] = '<p/>'.join(_value)
+                    ##   'year': '2018',
+                    if key == 'year':
+                        info['_year'] = value
 
+                    ##   'country': '美国/加拿大',
+                    if key == 'country':
+                        info['_country'] = add_country(value)
 
-            ##   'download_url': 'ftp://ygdy8:ygdy8@yg45.dydytt.net:8369/阳光电影www.ygdy8.com.一个小忙.BD.720p.中英双字幕.mkv'
-            if key == 'download_url':
-                info['_download_url'] = value
+                    ##   'category': '剧情/悬疑/犯罪',
+                    if key == 'category':
+                        info['_category'] = add_category(value)
 
-        # ## 主表操作
-        ck_sql = " select id from movies where short_title='" + info['_short_title'] + "' "
-        cursor.execute(ck_sql)
-        ck = cursor.fetchone()
+                    ##   'language': '英语',
+                    if key == 'language':
+                        info['_language'] = add_language(value)
 
-        if ck:  ## not empty
-            lastID = ck[0]['id']
-        else:
-            _thisTime = int(time.time())
-            in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(info['_title'], info['_short_title'], info['_name_cn'], info['_name_en'], info['_cover'], info['_year'],info['_country'], info['_category'], info['_language'], info['_sub_title'], info['_release_time'],info['_file_format'], info['_ratio'], info['_length'], info['_director'], info['_writers'], info['_actors'], info['_profiles'], _thisTime)
-            cursor.execute(in_sql)
-            lastID = db.insert_id()
-            db.commit()
+                    ##   'sub_title': '中英双字幕',
+                    if key == 'sub_title':
+                        info['_sub_title'] = add_subtitle(value)
 
-        ## imdb评分
-        if info['_imdb_score']:
-            add_score(2, info['_douban_score'])
+                    ##   'release_time': '2018-09-14(美国)',
+                    if key == 'release_time':
+                        info['_release_time'] = add_release(value)
 
-        ## 豆瓣评分
-        if info['_douban_score']:
-            add_score(1,info['_douban_score'])
+                    ## 'imdb_score': '7.1/10 from 28895 users',
+                    if key == 'imdb_score':
+                        info['_imdb_score'] = value
 
-
-        if info['_download_url']:
-           add_download(lastID,info['_download_url'])
-
+                    ## 'douban_score': '7.1/10 from 4109 users',
+                    if key == 'douban_score':
+                        info['_douban_score'] = value
 
 
-        print(info)
+                    ##   'file_format': 'x264 + aac',
+                    if key == 'file_format':
+                        info['_file_format'] = value
+
+                    ##   'ratio': '1280 x 688',
+                    if key == 'ratio':
+                        info['_ratio'] = value
+
+                    ##   'length': '117分钟',
+                    if key == 'length':
+                        info['_length'] = value
+
+                    ##   'director': '保罗·费格 Paul Feig',
+                    if key == 'director':
+                        info['_director'] = add_worker(1,value)
+
+                    ##   'actors': ['布蕾克·莱弗利 Blake Lively', ],
+                    if key == 'actors':
+                        info['_actors'] = add_worker(2,value)
 
 
-        exit()
+                    ##   'profiles': ['', '故事讲述一博主史蒂芬娜（', ''],
+                    if key == 'profiles':
+                        _value = [str(i) for i in value]
+                        info['_profiles'] = '<p/>'.join(_value)
+
+
+                    ##   'download_url': 'ftp://ygdy8:ygdy8@yg45.dydytt.net:8369/阳光电影www.ygdy8.com.一个小忙.BD.720p.中英双字幕.mkv'
+                    if key == 'download_url':
+                        info['_download_url'] = value
+
+                # ## 主表操作
+                ck_sql = " select id from movies where short_title='" + info['_short_title'] + "' "
+                cursor.execute(ck_sql)
+                ck = cursor.fetchone()
+
+                if ck:  ## not empty
+                    lastID = ck[0]
+                else:
+                    _thisTime = int(time.time())
+                    in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(info['_title'], info['_short_title'], info['_name_cn'], info['_name_en'], info['_cover'], info['_year'],info['_country'], info['_category'], info['_language'], info['_sub_title'], info['_release_time'],info['_file_format'], info['_ratio'], info['_length'], info['_director'], info['_writers'], info['_actors'], info['_profiles'], _thisTime)
+                    cursor.execute(in_sql)
+                    lastID = db.insert_id()
+                    db.commit()
+
+                ## imdb评分
+                if info['_imdb_score']:
+                    add_score(2, info['_douban_score'])
+
+                ## 豆瓣评分
+                if info['_douban_score']:
+                    add_score(1,info['_douban_score'])
+
+
+                if info['_download_url']:
+                   add_download(lastID,info['_download_url'])
+
+
+
+                print(info['_title'])
