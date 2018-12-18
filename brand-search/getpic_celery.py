@@ -107,8 +107,8 @@ def get_image(annNum):
         cookie = load_cookie()
 
         # # body 参数
-        # _dic = {'id': code, 'pageNum':'9999999', 'flag': 1}
-        # _data = bytes(urllib.parse.urlencode(_dic), encoding='utf-8')
+        _dic = {'id': code, 'pageNum':'9999999', 'flag': 1}
+        _data = bytes(urllib.parse.urlencode(_dic), encoding='utf-8')
         #
         headers = {
             'Cookie': cookie,
@@ -124,23 +124,33 @@ def get_image(annNum):
         # totalPage = _jsonData['totalPage']  ## 总页数
         # pageSize = _jsonData['pageSize']    ## 每页显示条数
 
-
         ##  从统计信息表内取出总条数，计算出总页数
         annTypeCodeName = db.annType.find({'ann_type_code':ann_type}).limit(1)
 
         ## 商标局的公告名称做过变更 -- by zuiw
         if annTypeCodeName[0]['ann_type'] == '商标使用许可备案公告':
             _typeName_new = '商标使用许可合同备案公告'
-
             _info = db.catalogueInfo.find({"$and":[{"$or":[{"ann_type_code":str(annTypeCodeName[0]['ann_type'])},{"ann_type_code":str(_typeName_new)}]},{"ann_num":str(annNum)}]}  ).limit(1)  ##  最后采集的数据
 
         else:
-
             _info = db.catalogueInfo.find({'ann_type_code':str(annTypeCodeName[0]['ann_type']),'ann_num': str(annNum)}).limit(1)  ##  最后采集的数据
 
-        totalNum = _info[0]['page_num']   ## 总条数
-        pageSize = 20    ## 每页显示条数
-        totalPage = math.ceil(totalNum / pageSize)  ## 总页数
+
+        try:
+            _info[0]
+            totalNum = _info[0]['page_num']  ## 总条数
+            pageSize = 20  ## 每页显示条数
+            totalPage = math.ceil(totalNum / pageSize)  ## 总页数
+        except:
+            ## 获取总条数和总页数
+            _req = urllib.request.Request(url=url, data=_data, headers=headers, method='POST')
+            _jsonContent = urllib.request.urlopen(_req,timeout=300).read().decode('utf-8')  ## 返回 值
+            _jsonData = json.loads(_jsonContent)
+
+            totalNum = _jsonData['total']   ## 总条数
+            totalPage = _jsonData['totalPage']  ## 总页数
+            pageSize = _jsonData['pageSize']    ## 每页显示条数
+
 
         ## 抓取
         if lastImg.count() == 0:    ## result is zero
@@ -236,11 +246,15 @@ endNum = ''
 
 if sys.argv[1] == '1':
     startNum = 1500
-    endNum = 0
+    endNum = 1300
+
+# if sys.argv[1] == '2':
+#     startNum = 1550
+#     endNum = 1500
 
 if sys.argv[1] == '2':
-    startNum = 1550
-    endNum = 1500
+    startNum = 1300
+    endNum = 0
 
 if sys.argv[1] == '3':
     startNum = 1600

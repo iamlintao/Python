@@ -6,6 +6,7 @@ import requests
 import pymysql
 import re
 import time
+import html
 from lxml import etree
 
 ##  链接数据库配置
@@ -21,7 +22,7 @@ BASE_DOMAIN="http://www.dytt8.net"
 
 
 def get_detail_url(url):
-    response = requests.get(url, headers=HEADERS) #print(response.content.decode('gbk'))
+    response = requests.get(url, headers=HEADERS,timeout=120) #print(response.content.decode('gbk'))
     # text = response.text.encode("utf-8")  #拿到数据，，再解码
     text = response.content.decode('gbk',"ignore")      ##  ignore  解决编码问题
     html = etree.HTML(text)
@@ -32,7 +33,7 @@ def get_detail_url(url):
 def parse_detail_page(url):
     movie={}
     response=requests.get(url,headers=HEADERS)
-    text=response.content.decode('gbk')  #text = response.text.encode("utf-8")
+    text=response.content.decode('gbk',"ignore")  #text = response.text.encode("utf-8")
     html=etree.HTML(text)
     title=html.xpath("//div[@class='title_all']//font[@color='#07519a']/text()")[0]
     # for x in title:
@@ -153,6 +154,7 @@ def add_country(countryName):
             if list:        ## 不为空
                 ids.append(list[0])
             else:
+                item = pymysql.escape_string(item)
                 insert_sql= " insert into country (country_name) VALUE ('"+item+"') "
                 cursor.execute(insert_sql)
                 lastID = db.insert_id()
@@ -176,6 +178,7 @@ def add_category(actegoryName):
             if list:  ## 不为空
                 ids.append(list[0])
             else:
+                item = pymysql.escape_string(item)
                 insert_sql = " insert into category (category_name) VALUE ('" + item + "') "
                 cursor.execute(insert_sql)
                 lastID = db.insert_id()
@@ -198,6 +201,7 @@ def add_language(languageName):
             if list:  ## 不为空
                 ids.append(list[0])
             else:
+                item = pymysql.escape_string(item)
                 insert_sql = " insert into language (language_name) VALUE ('" + item + "') "
                 cursor.execute(insert_sql)
                 lastID = db.insert_id()
@@ -221,6 +225,7 @@ def add_subtitle(subtitleName):
             if list:  ## 不为空
                 ids.append(list[0])
             else:
+                item = pymysql.escape_string(item)
                 insert_sql = " insert into subtitle (subtitle_name) VALUE ('" + item + "') "
                 cursor.execute(insert_sql)
                 lastID = db.insert_id()
@@ -233,19 +238,38 @@ def add_subtitle(subtitleName):
 ## 发布时间处理
 def add_release(releaseTime):
     ids = [];
+
+    ## 特出情况处理
+    if releaseTime == '2014-06-06(美国/中国)':
+        releaseTime = '2014-06-06(美国)/2014-06-06(中国)'
+
+    if releaseTime == '2014-06-27(美国/中国大陆)':
+            releaseTime = '2014-06-27(美国)/2014-06-27(中国)'
+
+
     release = releaseTime.split("/")
     for item in release:
 
         item = item.strip()
 
         ## 上映时间
-        _date =  re.search(r"(\d{4}-\d{1,2}-\d{1,2})",item)
+        # _date =  re.search(r"(\d{4}-\d{1,2}-\d{1,2})",item)
+        _date = re.search(r"(\d{4}(-\d{1,2})*)", item)
+
         releaseDate = _date.group(0)
 
         ## 上映地区
-        rep = re.compile(r'[(](.*?)[)]',re.S)
+        # rep = re.compile(r'[(](.*?)[)]',re.S)
+        # releaseArea = re.findall(rep, item)
+        # releaseArea = releaseArea[0]
+
+        ## 提取中文
+        rep = re.compile("[\u4e00-\u9fa5]+")
         releaseArea = re.findall(rep, item)
-        releaseArea = releaseArea[0]
+        if releaseArea:
+            releaseArea = releaseArea[0]
+        else:
+            releaseArea = ''
 
         if item:
             sql = " select id from released where release_time='" + releaseDate + "'  and release_area='" + releaseArea + "' "
@@ -255,6 +279,9 @@ def add_release(releaseTime):
             if list:  ## 不为空
                 ids.append(list[0])
             else:
+                releaseDate = pymysql.escape_string(releaseDate)
+                releaseArea = pymysql.escape_string(releaseArea)
+
                 insert_sql = " insert into released (release_time,release_area) VALUE ('" +releaseDate+ "','"+releaseArea+"') "
                 cursor.execute(insert_sql)
                 lastID = db.insert_id()
@@ -283,6 +310,8 @@ def add_score(movieID,typeID,scoreContent):
         id = rs[0]
 
     else:
+        _score = pymysql.escape_string(_score)
+
         insert_sql = " insert into score (movie_id,score_type,score,from_user) values ('%s','%s','%s','%s' ) " % (movieID,typeID,_score,_users)
         cursor.execute(insert_sql)
         lastID = db.insert_id()
@@ -303,7 +332,6 @@ def add_worker(type,content):
     for i in content:
 
         _name = i.split(' ',1)
-
         _name_cn = _name[0].replace("'", "_")  ## 中文名
 
         if len(_name) > 1:
@@ -319,6 +347,9 @@ def add_worker(type,content):
             ids.append(rs[0])
 
         else:
+            _name_cn = pymysql.escape_string(_name_cn)
+            _name_en = pymysql.escape_string(_name_en)
+
             insert_sql = " insert into worker (worker_type,worker_name_cn,worker_name_en) VALUES (%s,'%s','%s')" %(type,_name_cn,_name_en)
             cursor.execute(insert_sql)
             lastID = db.insert_id()
@@ -344,21 +375,25 @@ def add_download(movieID,downloadURL):
     if typeCode == 'magnet':
         type = 5
 
+    if typeCode == 'http':
+        return ''
 
-    sql = " select id from download where movie_id=%s and download_type =%s and download_url='%s' " % (movieID,type,downloadURL)
-    cursor.execute(sql)
-    rs = cursor.fetchone()
-
-    if rs:  ## 不为空
-        id = rs[0]
     else:
-        insert_sql = " insert into download (movie_id,download_type,download_url) VALUES (%s,'%s','%s')" % (movieID,type,downloadURL)
-        cursor.execute(insert_sql)
-        lastID = db.insert_id()
-        db.commit()
-        id = lastID
+        # sql = " select id from download where movie_id=%s and download_type =%s and download_url='%s' " % (movieID,type,downloadURL)
+        sql = " select id from download where download_url='%s' " % (downloadURL)
+        cursor.execute(sql)
+        rs = cursor.fetchone()
 
-    return id
+        if rs:  ## 不为空
+            id = rs[0]
+        else:
+            insert_sql = " insert into download (movie_id,download_type,download_url) VALUES (%s,'%s','%s')" % (movieID,type,downloadURL)
+            cursor.execute(insert_sql)
+            lastID = db.insert_id()
+            db.commit()
+            id = lastID
+
+        return id
 
 
 #########
@@ -394,32 +429,45 @@ if __name__ == '__main__':
     # spider()
 
     base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
-    for x in range(1, 100):  # how much page depend on you
-        # print("==="*30)
-        # print(x)
+    for x in range(61,0,-1):  # how much page depend on you
         url = base_url.format(x)
+
+        print(url)
+
         detail_urls = get_detail_url(url)
         for detail_url in detail_urls:
-            # print(detail_url)
             movies=[]
 
             movie = parse_detail_page(detail_url)
-            movies.append(movie)
 
-            for movie in movies:
+            if movie:
+                movies.append(movie)
+
+            for _movie in movies:
                 info = {}   ## 定义字典
 
-                info['_writers'] = ''    ##  设置默认值
-                info['_release_time'] = ''
-                info['_imdb_score'] = ''
-                info['_douban_score'] = ''
+                info['_title'] = ''
+                info['_short_title'] = ''
                 info['_name_cn'] = ''
                 info['_name_en'] = ''
+                info['_cover'] = ''
+                info['_year'] = ''
                 info['_country'] = ''
+                info['_category'] = ''
+                info['_language'] = ''
+                info['_sub_title'] = ''
+                info['_release_time'] = ''
+                info['_file_format'] = ''
+                info['_ratio'] = ''
+                info['_length'] = ''
                 info['_director'] = ''
+                info['_writers'] = ''
+                info['_actors'] = ''
+                info['_profiles'] = ''
+                info['_imdb_score'] = ''
+                info['_douban_score'] = ''
 
-
-                for (key,value) in movie.items():
+                for (key,value) in _movie.items():
 
                     ##   '_writers': '',
                     if key == 'writers':
@@ -501,6 +549,7 @@ if __name__ == '__main__':
                     if key == 'profiles':
                         _value = [str(i) for i in value]
                         info['_profiles'] = '<p/>'.join(_value)
+                        info['_profiles'] = html.escape(info['_profiles'])
 
 
                     ##   'download_url': 'ftp://ygdy8:ygdy8@yg45.dydytt.net:8369/阳光电影www.ygdy8.com.一个小忙.BD.720p.中英双字幕.mkv'
@@ -516,18 +565,27 @@ if __name__ == '__main__':
                     lastID = ck[0]
                 else:
                     _thisTime = int(time.time())
-                    in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(info['_title'], info['_short_title'], info['_name_cn'], info['_name_en'], info['_cover'], info['_year'],info['_country'], info['_category'], info['_language'], info['_sub_title'], info['_release_time'],info['_file_format'], info['_ratio'], info['_length'], info['_director'], info['_writers'], info['_actors'], info['_profiles'], _thisTime)
-                    cursor.execute(in_sql)
-                    lastID = db.insert_id()
-                    db.commit()
+                    in_sql = " insert into movies (title,short_title,name_cn,name_en,cover,publish_year,country,category,languages,sub_title,release_time,file_format,ratio,time_length,director,writers,actors,profiles,create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(pymysql.escape_string(info['_title']), pymysql.escape_string(info['_short_title']), pymysql.escape_string(info['_name_cn']), pymysql.escape_string(info['_name_en']), info['_cover'], info['_year'],info['_country'], info['_category'], info['_language'], info['_sub_title'], info['_release_time'],info['_file_format'], info['_ratio'], info['_length'], info['_director'], info['_writers'], info['_actors'], pymysql.escape_string(info['_profiles']), _thisTime)
+                    try:
+                        cursor.execute(in_sql)
+                        lastID = db.insert_id()
+                        db.commit()
+                    except:
+
+                        ## 写入错入日志
+                        f = open('error_sql.txt', 'a')
+                        f.write(in_sql)
+                        f.closed
+
+                        print(in_sql)
 
                 ## imdb评分
                 if info['_imdb_score']:
-                    add_score(2, info['_douban_score'])
+                    add_score(lastID,2, info['_imdb_score'])
 
                 ## 豆瓣评分
                 if info['_douban_score']:
-                    add_score(1,info['_douban_score'])
+                    add_score(lastID,1,info['_douban_score'])
 
 
                 if info['_download_url']:
