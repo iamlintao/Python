@@ -171,7 +171,8 @@ def spideImg(startNum,endNum):
 
     if startNum > endNum:
         for i in range(startNum, endNum, -1):
-            get_image(i)
+            print(i)
+            # get_image(i)
     else:
         print('起始值必须大于结束值')
         exit()
