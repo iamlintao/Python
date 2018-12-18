@@ -429,7 +429,7 @@ if __name__ == '__main__':
     # spider()
 
     base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
-    for x in range(61,0,-1):  # how much page depend on you
+    for x in range(52,0,-1):  # how much page depend on you
         url = base_url.format(x)
 
         print(url)
