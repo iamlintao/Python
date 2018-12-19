@@ -35,10 +35,12 @@ def parse_detail_page(url):
     response=requests.get(url,headers=HEADERS)
     text=response.content.decode('gbk',"ignore")  #text = response.text.encode("utf-8")
     html=etree.HTML(text)
-    title=html.xpath("//div[@class='title_all']//font[@color='#07519a']/text()")[0]
-    # for x in title:
-    #     print(etree.tostring(x,encoding="utf-8").decode("utf-8"))
-    #print(title)
+
+    try:
+        title=html.xpath("//div[@class='title_all']//font[@color='#07519a']/text()")[0]
+    except:
+        return ''
+
     movie['title']=title
     Zoome=html.xpath("//div[@id='Zoom']")[0] #return list
     imgs=Zoome.xpath(".//img/@src")
@@ -120,8 +122,14 @@ def parse_detail_page(url):
                         break
                     profiles.append(profile)
                     movie['profiles']=profiles
-        download_url=html.xpath("//td[@bgcolor='#fdfddf']/a/@href")[0]
-        movie['download_url']=download_url
+
+        try:
+            download_url=html.xpath("//td[@bgcolor='#fdfddf']/a/@href")[0]
+
+        except:
+            download_url = ''
+
+        movie['download_url'] = download_url
         return movie
 
 ## 定义数组
@@ -248,6 +256,7 @@ def add_release(releaseTime):
 
 
     release = releaseTime.split("/")
+
     for item in release:
 
         item = item.strip()
@@ -256,7 +265,10 @@ def add_release(releaseTime):
         # _date =  re.search(r"(\d{4}-\d{1,2}-\d{1,2})",item)
         _date = re.search(r"(\d{4}(-\d{1,2})*)", item)
 
-        releaseDate = _date.group(0)
+        try:
+            releaseDate = _date.group(0)
+        except:
+            return ''
 
         ## 上映地区
         # rep = re.compile(r'[(](.*?)[)]',re.S)
@@ -387,11 +399,14 @@ def add_download(movieID,downloadURL):
         if rs:  ## 不为空
             id = rs[0]
         else:
-            insert_sql = " insert into download (movie_id,download_type,download_url) VALUES (%s,'%s','%s')" % (movieID,type,downloadURL)
-            cursor.execute(insert_sql)
-            lastID = db.insert_id()
-            db.commit()
-            id = lastID
+            if downloadURL:
+                insert_sql = " insert into download (movie_id,download_type,download_url) VALUES (%s,'%s','%s')" % (movieID,type,downloadURL)
+                cursor.execute(insert_sql)
+                lastID = db.insert_id()
+                db.commit()
+                id = lastID
+            else:
+                id = ''
 
         return id
 
@@ -429,7 +444,7 @@ if __name__ == '__main__':
     # spider()
 
     base_url = 'http://www.dytt8.net/html/gndy/dyzz/list_23_{}.html'
-    for x in range(52,0,-1):  # how much page depend on you
+    for x in range(2,0,-1):  # how much page depend on you
         url = base_url.format(x)
 
         print(url)
@@ -580,14 +595,14 @@ if __name__ == '__main__':
                         print(in_sql)
 
                 ## imdb评分
-                if info['_imdb_score']:
+                if info['_imdb_score'] and info['_imdb_score'] != 'N/A':
                     add_score(lastID,2, info['_imdb_score'])
 
                 ## 豆瓣评分
-                if info['_douban_score']:
+                if info['_douban_score'] and info['_douban_score'] != 'N/A':
                     add_score(lastID,1,info['_douban_score'])
 
-
+                ## 下载地址
                 if info['_download_url']:
                    add_download(lastID,info['_download_url'])
 
